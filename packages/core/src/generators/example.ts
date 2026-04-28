@@ -5,11 +5,35 @@ import type { AnalysisResult, GeneratedFile, GenerateExampleOptions } from "../t
 
 export async function generateExample(result: AnalysisResult, options: GenerateExampleOptions = {}): Promise<GeneratedFile> {
   const filePath = path.join(result.context.root, ".env.example");
-  const existing = await readExisting(filePath);
+  const existingContents = await readExisting(filePath);
+  const existing = existingContents.split(/\r?\n/);
   const existingKeys = parseExistingKeys(existing);
   const knownKeys = collectKnownEnvKeys(result.context.envFiles);
   const usageKeys = new Set(result.usages.map((usage) => usage.key));
-  const allKeys = [...new Set([...existingKeys, ...knownKeys, ...usageKeys])].sort();
+  const missingKeys = [...new Set([...knownKeys, ...usageKeys])]
+    .filter((key) => !existingKeys.includes(key))
+    .sort();
+
+  if (existingContents.length > 0) {
+    if (missingKeys.length === 0) {
+      return {
+        path: filePath,
+        contents: existingContents,
+        changed: false
+      };
+    }
+
+    const separator = existingContents.endsWith("\n") ? "\n" : "\n\n";
+    const additions = ["# Added by EnvDoctor.", ...missingKeys.map((key) => `${key}=`)].join("\n");
+    const contents = `${existingContents}${separator}${additions}\n`;
+
+    return {
+      path: filePath,
+      contents,
+      changed: contents !== existingContents
+    };
+  }
+
   const lines: string[] = [];
 
   if (options.includeComments !== false) {
@@ -17,25 +41,22 @@ export async function generateExample(result: AnalysisResult, options: GenerateE
     lines.push("");
   }
 
-  for (const key of allKeys) {
-    const existingLine = existing.find((line) => new RegExp(`^\\s*${escapeRegExp(key)}\\s*=`).test(line));
-    lines.push(existingLine ?? `${key}=`);
-  }
+  lines.push(...missingKeys.map((key) => `${key}=`));
 
   const contents = `${lines.join("\n")}\n`;
   return {
     path: filePath,
     contents,
-    changed: contents !== `${existing.join("\n")}${existing.length > 0 ? "\n" : ""}`
+    changed: contents !== existingContents
   };
 }
 
-async function readExisting(filePath: string): Promise<string[]> {
+async function readExisting(filePath: string): Promise<string> {
   try {
-    return (await readFile(filePath, "utf8")).split(/\r?\n/).filter((line) => line.length > 0);
+    return await readFile(filePath, "utf8");
   } catch (error) {
     if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
-      return [];
+      return "";
     }
 
     throw error;
@@ -46,8 +67,4 @@ function parseExistingKeys(lines: string[]): string[] {
   return lines
     .map((line) => line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=/)?.[1])
     .filter((key): key is string => Boolean(key));
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

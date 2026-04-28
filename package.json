@@ -11,7 +11,7 @@
   "scripts": {
     "build": "npm run build -w @envdoctor/core && npm run build -w envdoctor",
     "dev": "npm run dev -w envdoctor",
-    "test": "vitest run",
+    "test": "tsx --test packages/core/test/analyze.test.ts packages/cli/test/package.test.ts",
     "typecheck": "tsc -b packages/core packages/cli",
     "lint": "tsc -b packages/core packages/cli --pretty false",
     "clean": "node -e \"const fs=require('fs');fs.rmSync('packages/core/dist',{recursive:true,force:true});fs.rmSync('packages/cli/dist',{recursive:true,force:true})\""
@@ -30,7 +30,7 @@
   "devDependencies": {
     "@types/node": "^24.10.1",
     "tsup": "^8.5.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.14"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 export async function readJsonFile<T>(filePath: string): Promise<T | undefined> {
   try {
-    return JSON.parse(await readFile(filePath, "utf8")) as T;
+    return JSON.parse(stripBom(await readFile(filePath, "utf8"))) as T;
   } catch (error) {
     if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
       return undefined;
@@ -10,6 +10,10 @@ export async function readJsonFile<T>(filePath: string): Promise<T | undefined> 
 
     throw error;
   }
+}
+
+function stripBom(contents: string): string {
+  return contents.charCodeAt(0) === 0xfeff ? contents.slice(1) : contents;
 }
 
 export function asRecord(value: unknown): Record<string, unknown> {

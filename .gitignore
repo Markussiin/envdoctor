@@ -10,3 +10,6 @@ out/
 !.env.example
 !.env.test.example
 turbo.env.patch.json
+.pack/
+.install-test/
+install-test/

@@ -23,7 +23,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@envdoctor/core": "file:../core",
+    "@envdoctor/core": "0.1.0",
     "commander": "^14.0.2",
     "picocolors": "^1.1.1"
   },

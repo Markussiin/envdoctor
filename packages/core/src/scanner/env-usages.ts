@@ -285,6 +285,10 @@ function literalString(node: unknown): string | undefined {
     return undefined;
   }
 
+  if (isWrapperExpression(node)) {
+    return literalString(node.expression);
+  }
+
   if (node.type === "StringLiteral" && typeof node.value === "string") {
     return node.value;
   }
@@ -298,6 +302,16 @@ function literalString(node: unknown): string | undefined {
   }
 
   return undefined;
+}
+
+function isWrapperExpression(node: Record<string, unknown>): boolean {
+  return [
+    "TSAsExpression",
+    "TSSatisfiesExpression",
+    "TSTypeAssertion",
+    "TSNonNullExpression",
+    "ParenthesizedExpression"
+  ].includes(String(node.type)) && "expression" in node;
 }
 
 function identifierName(node: unknown): string | undefined {
