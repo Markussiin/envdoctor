@@ -1,0 +1,36 @@
+{
+  "name": "envdoctor-repo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Diagnose missing, leaked, stale, and misconfigured environment variables in modern JavaScript repos.",
+  "type": "module",
+  "packageManager": "npm@11.6.1",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @envdoctor/core && npm run build -w envdoctor",
+    "dev": "npm run dev -w envdoctor",
+    "test": "vitest run",
+    "typecheck": "tsc -b packages/core packages/cli",
+    "lint": "tsc -b packages/core packages/cli --pretty false",
+    "clean": "node -e \"const fs=require('fs');fs.rmSync('packages/core/dist',{recursive:true,force:true});fs.rmSync('packages/cli/dist',{recursive:true,force:true})\""
+  },
+  "keywords": [
+    "env",
+    "dotenv",
+    "vite",
+    "nextjs",
+    "turborepo",
+    "ci",
+    "static-analysis"
+  ],
+  "author": "Markussiin",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
+  }
+}

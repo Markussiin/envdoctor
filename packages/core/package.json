@@ -1,0 +1,29 @@
+{
+  "name": "@envdoctor/core",
+  "version": "0.1.0",
+  "description": "Core scanners, readers, diagnostics, and generators for EnvDoctor.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean && tsc -b tsconfig.json --emitDeclarationOnly --force",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.28.5",
+    "dotenv": "^17.2.3",
+    "fast-glob": "^3.3.3",
+    "yaml": "^2.8.1",
+    "zod": "^4.1.13"
+  }
+}

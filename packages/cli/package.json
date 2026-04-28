@@ -1,0 +1,36 @@
+{
+  "name": "envdoctor",
+  "version": "0.1.0",
+  "description": "Diagnose missing, leaked, stale, and misconfigured environment variables in Node.js, Next.js, Vite, Turborepo, and CI.",
+  "type": "module",
+  "bin": {
+    "envdoctor": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean && tsc -b tsconfig.json --emitDeclarationOnly --force",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@envdoctor/core": "file:../core",
+    "commander": "^14.0.2",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}
