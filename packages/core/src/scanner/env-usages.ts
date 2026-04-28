@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { parse } from "@babel/parser";
 import type { DynamicEnvUsage, EnvAccessKind, EnvSource, EnvUsage, PackageInfo } from "../types.js";
 import { isSubPath, relativePath } from "../utils/path.js";
-import { findCodeFiles } from "./files.js";
+import { DEFAULT_IGNORE_PATTERNS, findCodeFiles } from "./files.js";
 
 interface ScanResult {
   usages: EnvUsage[];
@@ -22,7 +22,8 @@ interface VisitContext {
 }
 
 export async function scanEnvUsages(root: string, packages: PackageInfo[], include?: string[], ignore?: string[]): Promise<ScanResult> {
-  const files = await findCodeFiles(root, include, ignore);
+  const ignorePatterns = ignore ? [...DEFAULT_IGNORE_PATTERNS, ...ignore] : DEFAULT_IGNORE_PATTERNS;
+  const files = await findCodeFiles(root, include, ignorePatterns);
   const usages: EnvUsage[] = [];
   const dynamicUsages: DynamicEnvUsage[] = [];
 

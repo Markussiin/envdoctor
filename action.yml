@@ -1,0 +1,60 @@
+name: EnvDoctor
+description: Diagnose missing, leaked, stale, and misconfigured environment variables in JavaScript repos.
+author: Markussiin
+
+branding:
+  icon: activity
+  color: green
+
+inputs:
+  cwd:
+    description: Repository path to scan, relative to the workflow workspace.
+    required: false
+    default: "."
+  fail-on:
+    description: Minimum severity that fails the action.
+    required: false
+    default: high
+  sarif:
+    description: Generate a SARIF file before enforcing policy.
+    required: false
+    default: "true"
+  sarif-file:
+    description: Path to write the SARIF report to.
+    required: false
+    default: envdoctor.sarif
+
+outputs:
+  sarif-file:
+    description: Path to the generated SARIF report.
+    value: ${{ inputs.sarif-file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install EnvDoctor action dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci
+
+    - name: Build EnvDoctor action
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm run build
+
+    - name: Generate EnvDoctor SARIF
+      if: ${{ inputs.sarif == 'true' }}
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        ENVDOCTOR_CWD: ${{ inputs.cwd }}
+        ENVDOCTOR_SARIF_FILE: ${{ inputs.sarif-file }}
+      run: node "$GITHUB_ACTION_PATH/packages/cli/dist/index.js" doctor --cwd "$ENVDOCTOR_CWD" --format sarif --output "$ENVDOCTOR_SARIF_FILE"
+
+    - name: Run EnvDoctor policy
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        ENVDOCTOR_CWD: ${{ inputs.cwd }}
+        ENVDOCTOR_FAIL_ON: ${{ inputs.fail-on }}
+      run: node "$GITHUB_ACTION_PATH/packages/cli/dist/index.js" ci --cwd "$ENVDOCTOR_CWD" --fail-on "$ENVDOCTOR_FAIL_ON" --github-annotations

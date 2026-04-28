@@ -1,0 +1,7 @@
+{
+  "name": "@demo/api",
+  "private": true,
+  "scripts": {
+    "build": "node --env-file=.env.optional src/db.ts"
+  }
+}

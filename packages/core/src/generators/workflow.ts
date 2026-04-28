@@ -3,13 +3,6 @@ import type { AnalysisResult, GeneratedFile } from "../types.js";
 
 export async function generateWorkflow(result: AnalysisResult): Promise<GeneratedFile> {
   const filePath = path.join(result.context.root, ".github", "workflows", "envdoctor.yml");
-  const packageManager = result.context.packageManager.split("@")[0] ?? "npm";
-  const runner = packageManager === "pnpm"
-    ? "pnpm envdoctor ci"
-    : packageManager === "yarn"
-      ? "yarn envdoctor ci"
-      : "npx envdoctor ci";
-
   const contents = [
     "name: EnvDoctor",
     "",
@@ -22,12 +15,27 @@ export async function generateWorkflow(result: AnalysisResult): Promise<Generate
     "jobs:",
     "  envdoctor:",
     "    runs-on: ubuntu-latest",
+    "    permissions:",
+    "      actions: read",
+    "      contents: read",
+    "      security-events: write",
     "    steps:",
     "      - uses: actions/checkout@v5",
     "      - uses: actions/setup-node@v5",
     "        with:",
     "          node-version: 24",
-    `      - run: ${runner}`,
+    "      - uses: Markussiin/envdoctor@main",
+    "        id: envdoctor",
+    "        with:",
+    "          fail-on: high",
+    "          sarif: \"true\"",
+    "          sarif-file: envdoctor.sarif",
+    "      - name: Upload EnvDoctor code scanning results",
+    "        uses: github/codeql-action/upload-sarif@v4",
+    "        if: always()",
+    "        with:",
+    "          sarif_file: envdoctor.sarif",
+    "          category: envdoctor",
     ""
   ].join("\n");
 

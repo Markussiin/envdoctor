@@ -1,0 +1,11 @@
+name: Deploy Demo
+
+on:
+  push:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ secrets.STRIPE_SECRET }}"
+      - run: echo "${{ secrets.GITHUB_TOKEN }}"

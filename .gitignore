@@ -10,6 +10,7 @@ out/
 !.env.example
 !.env.test.example
 turbo.env.patch.json
+*.sarif
 .pack/
 .install-test/
 install-test/

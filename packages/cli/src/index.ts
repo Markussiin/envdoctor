@@ -30,14 +30,20 @@ program
   .command("doctor", { isDefault: true })
   .description("Run framework-aware env diagnostics")
   .option("--cwd <path>", "repo root to scan", process.cwd())
+  .option("--format <format>", "report format: terminal, json, or sarif", "terminal")
   .option("--json", "print JSON output")
+  .option("--output <path>", "write report to a file")
+  .option("--github-annotations", "emit GitHub Actions workflow annotations")
   .action(doctorCommand);
 
 program
   .command("ci")
   .description("Run diagnostics and exit non-zero on high-impact issues")
   .option("--cwd <path>", "repo root to scan", process.cwd())
+  .option("--format <format>", "report format: terminal, json, or sarif", "terminal")
   .option("--json", "print JSON output")
+  .option("--output <path>", "write report to a file")
+  .option("--github-annotations", "emit GitHub Actions workflow annotations")
   .option("--fail-on <severity>", "minimum severity that fails CI", "high")
   .action(ciCommand);
 

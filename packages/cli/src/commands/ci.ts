@@ -1,9 +1,13 @@
-import { analyzeProject, severityRank, toJsonReport, type Severity } from "@envdoctor/core";
+import { analyzeProject, severityRank, type Severity } from "@envdoctor/core";
 import { renderCi } from "../output.js";
+import { emitReport, resolveReportFormat } from "../report.js";
 
 interface CiOptions {
   cwd?: string;
+  format?: string;
   json?: boolean;
+  output?: string;
+  githubAnnotations?: boolean;
   failOn?: Severity;
 }
 
@@ -15,8 +19,9 @@ export async function ciCommand(options: CiOptions): Promise<void> {
 
   const result = await analyzeProject(options.cwd ?? process.cwd());
   const failing = result.diagnostics.filter((diagnostic) => severityRank[diagnostic.severity] >= severityRank[threshold]);
+  const format = resolveReportFormat(options);
 
-  console.log(options.json ? toJsonReport(result) : renderCi(result, threshold));
+  await emitReport(result, format, () => renderCi(result, threshold), options);
 
   if (failing.length > 0) {
     process.exitCode = 1;

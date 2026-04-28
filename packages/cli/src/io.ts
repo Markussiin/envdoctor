@@ -8,6 +8,11 @@ export async function writeGeneratedFile(file: GeneratedFile): Promise<void> {
   await writeFile(file.path, file.contents, "utf8");
 }
 
+export async function writeTextFile(filePath: string, contents: string): Promise<void> {
+  await mkdir(path.dirname(path.resolve(filePath)), { recursive: true });
+  await writeFile(filePath, contents, "utf8");
+}
+
 export async function printOrWrite(files: Array<GeneratedFile | undefined>, write: boolean): Promise<void> {
   const concreteFiles = files.filter((file): file is GeneratedFile => Boolean(file));
 

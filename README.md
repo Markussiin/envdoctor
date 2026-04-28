@@ -1,5 +1,7 @@
 # EnvDoctor
 
+[![CI](https://github.com/Markussiin/envdoctor/actions/workflows/ci.yml/badge.svg)](https://github.com/Markussiin/envdoctor/actions/workflows/ci.yml)
+
 Diagnose missing, leaked, stale, and misconfigured environment variables in Node.js, Next.js, Vite, Turborepo, and CI.
 
 EnvDoctor is a static analyzer and CI guard for the messy env-variable layer in modern JavaScript repositories. It scans source code with an AST, compares discovered keys with `.env*`, `.env.example`, env schemas, framework rules, monorepo config, and GitHub Actions workflows, then explains what will break and how to fix it.
@@ -55,6 +57,7 @@ configService.get("KEY");
 Repository context:
 
 - `.env`, `.env.local`, `.env.example`, `.env.production`, `.env.test`
+- `.envdoctorignore` for source files or fixtures you intentionally do not want scanned
 - package workspaces and package manager
 - Next.js, Vite, Turborepo, and GitHub Actions detection
 - `turbo.json` `tasks`, `pipeline`, `globalEnv`, and passthrough env config
@@ -78,7 +81,29 @@ Every reporting command supports:
 
 ```bash
 envdoctor doctor --json
+envdoctor doctor --format sarif --output envdoctor.sarif
 envdoctor doctor --cwd ./apps/web
+envdoctor ci --github-annotations
+```
+
+## SARIF and Code Scanning
+
+EnvDoctor can emit SARIF 2.1.0 so findings show up in GitHub Code Scanning.
+
+```bash
+envdoctor doctor --format sarif --output envdoctor.sarif
+```
+
+Generated SARIF includes rule metadata, severity mapping, source locations, stable fingerprints, and suggested fixes. Use it with GitHub's SARIF upload action:
+
+```yaml
+- run: npx envdoctor doctor --format sarif --output envdoctor.sarif
+- uses: github/codeql-action/upload-sarif@v4
+  if: always()
+  with:
+    sarif_file: envdoctor.sarif
+    category: envdoctor
+- run: npx envdoctor ci --github-annotations
 ```
 
 ## First diagnostics
@@ -121,6 +146,8 @@ export const env = envSchema.parse(process.env);
 
 ## GitHub Action
 
+Use the wrapper action when you want GitHub annotations and an optional SARIF file from one step:
+
 ```yaml
 name: EnvDoctor
 
@@ -133,13 +160,43 @@ env:
 jobs:
   envdoctor:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: Markussiin/envdoctor@main
+        id: envdoctor
         with:
-          node-version: 24
-      - run: npx envdoctor ci
+          fail-on: high
+          sarif: "true"
+          sarif-file: envdoctor.sarif
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: envdoctor.sarif
+          category: envdoctor
 ```
+
+The generated workflow uses the same code-scanning pattern:
+
+```bash
+envdoctor generate workflow --write
+```
+
+## Demo
+
+This repo includes a deliberately broken fixture:
+
+```bash
+npm run build
+node packages/cli/dist/index.js doctor --cwd examples/broken-next-vite-turbo
+node packages/cli/dist/index.js doctor --cwd examples/broken-next-vite-turbo --format sarif --output envdoctor.sarif
+node packages/cli/dist/index.js ci --cwd examples/broken-next-vite-turbo --github-annotations
+```
+
+It demonstrates Vite prefix mistakes, public secret leaks, Next.js client env misuse, Turborepo Strict Mode drift, missing `.env.example` keys, missing Node `--env-file`, and GitHub Actions secret documentation gaps.
 
 ## Rule sources
 
@@ -158,7 +215,7 @@ npm install
 npm run typecheck
 npm test
 npm run build
-node packages/cli/dist/index.js doctor --cwd .
+node packages/cli/dist/index.js doctor --cwd examples/broken-next-vite-turbo
 ```
 
 ## Status

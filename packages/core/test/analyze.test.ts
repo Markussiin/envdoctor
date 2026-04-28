@@ -3,7 +3,13 @@ import assert from "node:assert/strict";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { analyzeProject, generateExample } from "../src/index.js";
+import {
+  analyzeProject,
+  generateExample,
+  generateWorkflow,
+  toGithubAnnotations,
+  toSarifReport
+} from "../src/index.js";
 
 describe("analyzeProject", () => {
   it("finds env references across supported JS/TS access patterns", async () => {
@@ -112,6 +118,21 @@ describe("analyzeProject", () => {
     assert.equal(result.diagnostics.some((diagnostic) => diagnostic.id === "vite-prefix" && diagnostic.key === "API_URL"), true);
   });
 
+  it("honors .envdoctorignore for source scanning", async () => {
+    const root = await fixtureRoot();
+    await writeJson(path.join(root, "package.json"), { name: "fixture" });
+    await mkdir(path.join(root, "src"), { recursive: true });
+    await mkdir(path.join(root, "examples", "broken"), { recursive: true });
+    await writeFile(path.join(root, ".envdoctorignore"), "examples/**\n", "utf8");
+    await writeFile(path.join(root, "src", "index.ts"), "process.env.ACTIVE_KEY;\n", "utf8");
+    await writeFile(path.join(root, "examples", "broken", "index.ts"), "process.env.IGNORED_KEY;\n", "utf8");
+
+    const result = await analyzeProject(root);
+    const keys = result.usages.map((usage) => usage.key).sort();
+
+    assert.deepEqual(keys, ["ACTIVE_KEY"]);
+  });
+
   it("reports framework-specific diagnostics in a monorepo fixture", async () => {
     const root = await fixtureRoot();
     await writeJson(path.join(root, "package.json"), {
@@ -181,6 +202,44 @@ describe("analyzeProject", () => {
     assert.equal(hasDiagnostic("node-env-file-missing"), true);
   });
 
+  it("serializes diagnostics to SARIF and GitHub annotations", async () => {
+    const root = await fixtureRoot();
+    await writeJson(path.join(root, "package.json"), {
+      name: "fixture",
+      dependencies: {
+        vite: "latest"
+      }
+    });
+    await mkdir(path.join(root, "src"), { recursive: true });
+    await writeFile(path.join(root, "src", "index.ts"), [
+      "import.meta.env.API_URL;",
+      "import.meta.env.VITE_STRIPE_SECRET_KEY;"
+    ].join("\n"), "utf8");
+
+    const result = await analyzeProject(root);
+    const sarif = JSON.parse(toSarifReport(result)) as {
+      version: string;
+      runs: Array<{
+        tool: { driver: { rules: Array<{ id: string }> } };
+        results: Array<{
+          ruleId: string;
+          level: string;
+          locations: Array<{ physicalLocation: { artifactLocation: { uri: string } } }>;
+        }>;
+      }>;
+    };
+    const annotations = toGithubAnnotations(result);
+
+    assert.equal(sarif.version, "2.1.0");
+    assert.equal(sarif.runs[0]?.tool.driver.rules.some((rule) => rule.id === "vite-prefix"), true);
+    assert.equal(sarif.runs[0]?.results.some((diagnostic) =>
+      diagnostic.ruleId === "public-secret-leak"
+      && diagnostic.level === "error"
+      && diagnostic.locations[0]?.physicalLocation.artifactLocation.uri === "src/index.ts"
+    ), true);
+    assert.equal(annotations.includes("::error file=src/index.ts"), true);
+  });
+
   it("generates .env.example from usage and env files", async () => {
     const root = await fixtureRoot();
     await writeJson(path.join(root, "package.json"), { name: "fixture" });
@@ -219,6 +278,20 @@ describe("analyzeProject", () => {
       "REDIS_URL=",
       ""
     ].join("\n"));
+  });
+
+  it("generates a code-scanning workflow", async () => {
+    const root = await fixtureRoot();
+    await writeJson(path.join(root, "package.json"), { name: "fixture" });
+
+    const result = await analyzeProject(root);
+    const generated = await generateWorkflow(result);
+
+    assert.equal(generated.contents.includes("github/codeql-action/upload-sarif@v4"), true);
+    assert.equal(generated.contents.includes("Markussiin/envdoctor@main"), true);
+    assert.equal(generated.contents.includes("security-events: write"), true);
+    assert.equal(generated.contents.includes("envdoctor.sarif"), true);
+    assert.equal(generated.contents.includes("sarif: \"true\""), true);
   });
 });
 

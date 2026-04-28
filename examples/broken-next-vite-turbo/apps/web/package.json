@@ -1,0 +1,12 @@
+{
+  "name": "@demo/web",
+  "private": true,
+  "scripts": {
+    "build": "vite build && next build",
+    "dev": "vite --host 0.0.0.0"
+  },
+  "dependencies": {
+    "next": "latest",
+    "vite": "latest"
+  }
+}

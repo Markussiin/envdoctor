@@ -1,0 +1,16 @@
+{
+  "name": "broken-next-vite-turbo-demo",
+  "private": true,
+  "packageManager": "npm@11.6.1",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "doctor": "envdoctor doctor",
+    "doctor:sarif": "envdoctor doctor --format sarif --output envdoctor.sarif",
+    "ci": "envdoctor ci --github-annotations"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  }
+}
