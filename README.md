@@ -127,6 +127,9 @@ name: EnvDoctor
 on:
   pull_request:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   envdoctor:
     runs-on: ubuntu-latest
