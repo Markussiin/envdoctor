@@ -1,7 +1,5 @@
 # EnvDoctor
 
-[![CI](https://github.com/Markussiin/envdoctor/actions/workflows/ci.yml/badge.svg)](https://github.com/Markussiin/envdoctor/actions/workflows/ci.yml)
-
 Diagnose missing, leaked, stale, and misconfigured environment variables in Node.js, Next.js, Vite, Turborepo, and CI.
 
 EnvDoctor is a static analyzer and CI guard for the messy env-variable layer in modern JavaScript repositories. It scans source code with an AST, compares discovered keys with `.env*`, `.env.example`, env schemas, framework rules, monorepo config, and GitHub Actions workflows, then explains what will break and how to fix it.
@@ -146,16 +144,13 @@ export const env = envSchema.parse(process.env);
 
 ## GitHub Action
 
-Use the wrapper action when you want GitHub annotations and an optional SARIF file from one step:
+Use the Marketplace wrapper action when you want GitHub annotations and an optional SARIF file from one step. Pin to the moving major tag for updates inside the same release line:
 
 ```yaml
 name: EnvDoctor
 
 on:
   pull_request:
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   envdoctor:
@@ -166,7 +161,10 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v5
-      - uses: Markussiin/envdoctor@main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - uses: Markussiin/envdoctor@v0
         id: envdoctor
         with:
           fail-on: high

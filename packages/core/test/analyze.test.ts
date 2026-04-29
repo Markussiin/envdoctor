@@ -288,7 +288,7 @@ describe("analyzeProject", () => {
     const generated = await generateWorkflow(result);
 
     assert.equal(generated.contents.includes("github/codeql-action/upload-sarif@v4"), true);
-    assert.equal(generated.contents.includes("Markussiin/envdoctor@main"), true);
+    assert.equal(generated.contents.includes("Markussiin/envdoctor@v0"), true);
     assert.equal(generated.contents.includes("security-events: write"), true);
     assert.equal(generated.contents.includes("envdoctor.sarif"), true);
     assert.equal(generated.contents.includes("sarif: \"true\""), true);

@@ -1,18 +1,18 @@
 name: EnvDoctor
-description: Diagnose missing, leaked, stale, and misconfigured environment variables in JavaScript repos.
+description: Find env-var bugs in JS/TS repos and emit GitHub annotations plus SARIF for Code Scanning.
 author: Markussiin
 
 branding:
-  icon: activity
+  icon: shield
   color: green
 
 inputs:
   cwd:
-    description: Repository path to scan, relative to the workflow workspace.
+    description: Repository path to scan, relative to the checked-out workflow workspace.
     required: false
     default: "."
   fail-on:
-    description: Minimum severity that fails the action.
+    description: Minimum diagnostic severity that fails the action.
     required: false
     default: high
   sarif:
